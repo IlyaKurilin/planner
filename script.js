@@ -63,11 +63,11 @@ function setupEventListeners() {
     });
 
     // Календарь
-    const prevMonthBtn = document.getElementById('prevMonth');
-    const nextMonthBtn = document.getElementById('nextMonth');
+    const prevWeekBtn = document.getElementById('prevWeek');
+    const nextWeekBtn = document.getElementById('nextWeek');
     
-    if (prevMonthBtn) prevMonthBtn.addEventListener('click', () => changeMonth(-1));
-    if (nextMonthBtn) nextMonthBtn.addEventListener('click', () => changeMonth(1));
+    if (prevWeekBtn) prevWeekBtn.addEventListener('click', () => changeWeek(-1));
+    if (nextWeekBtn) nextWeekBtn.addEventListener('click', () => changeWeek(1));
 
 }
 
@@ -189,7 +189,7 @@ function renderTasks() {
     
     // Обновляем календарь, если он активен
     if (document.getElementById('calendarTab').classList.contains('active')) {
-        renderCalendar();
+        renderWeekCalendar();
     }
 }
 
@@ -557,67 +557,65 @@ function switchTab(tabName) {
 
     // Если переключаемся на календарь, обновляем его
     if (tabName === 'calendar') {
-        renderCalendar();
+        renderWeekCalendar();
     }
 }
 
 // Работа с календарем
-function changeMonth(direction) {
-    currentDate.setMonth(currentDate.getMonth() + direction);
-    renderCalendar();
+function changeWeek(direction) {
+    currentDate.setDate(currentDate.getDate() + (direction * 7));
+    renderWeekCalendar();
 }
 
-function renderCalendar() {
-    const calendarGrid = document.getElementById('calendarGrid');
-    const currentMonthEl = document.getElementById('currentMonth');
+function renderWeekCalendar() {
+    const weekCalendar = document.getElementById('weekCalendar');
+    const currentWeekEl = document.getElementById('currentWeek');
     
-    if (!calendarGrid || !currentMonthEl) return;
+    if (!weekCalendar || !currentWeekEl) return;
 
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    
+    // Получаем начало недели (понедельник)
+    const startOfWeek = new Date(currentDate);
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+    startOfWeek.setDate(diff);
+
     // Обновляем заголовок
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    
     const monthNames = [
         'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
         'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
     ];
-    currentMonthEl.textContent = `${monthNames[month]} ${year}`;
-
-    // Очищаем календарь
-    calendarGrid.innerHTML = '';
-
-    // Добавляем заголовки дней недели
-    const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-    weekdays.forEach(day => {
-        const dayHeader = document.createElement('div');
-        dayHeader.className = 'weekday-header';
-        dayHeader.textContent = day;
-        calendarGrid.appendChild(dayHeader);
-    });
-
-    // Получаем первый день месяца и количество дней
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startDay = (firstDay.getDay() + 6) % 7; // Понедельник = 0
-
-    // Добавляем дни предыдущего месяца
-    const prevMonth = new Date(year, month - 1, 0);
-    for (let i = startDay - 1; i >= 0; i--) {
-        const day = document.createElement('div');
-        day.className = 'calendar-day other-month';
-        day.innerHTML = `
-            <div class="day-number">${prevMonth.getDate() - i}</div>
-        `;
-        calendarGrid.appendChild(day);
+    
+    const startMonth = monthNames[startOfWeek.getMonth()];
+    const endMonth = monthNames[endOfWeek.getMonth()];
+    const startYear = startOfWeek.getFullYear();
+    const endYear = endOfWeek.getFullYear();
+    
+    if (startMonth === endMonth && startYear === endYear) {
+        currentWeekEl.textContent = `${startMonth} ${startYear}`;
+    } else if (startYear === endYear) {
+        currentWeekEl.textContent = `${startMonth} - ${endMonth} ${startYear}`;
+    } else {
+        currentWeekEl.textContent = `${startMonth} ${startYear} - ${endMonth} ${endYear}`;
     }
 
-    // Добавляем дни текущего месяца
+    // Очищаем календарь
+    weekCalendar.innerHTML = '';
+
+    // Названия дней недели
+    const dayNames = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+    const dayNamesShort = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+    // Создаем дни недели
     const today = new Date();
-    for (let day = 1; day <= daysInMonth; day++) {
-        const dayDate = new Date(year, month, day);
+    for (let i = 0; i < 7; i++) {
+        const dayDate = new Date(startOfWeek);
+        dayDate.setDate(startOfWeek.getDate() + i);
+        
         const dayEl = document.createElement('div');
-        dayEl.className = 'calendar-day';
+        dayEl.className = 'week-day';
         
         if (dayDate.toDateString() === today.toDateString()) {
             dayEl.classList.add('today');
@@ -631,33 +629,46 @@ function renderCalendar() {
         });
 
         dayEl.innerHTML = `
-            <div class="day-header">
-                <div class="day-number">${day}</div>
-                ${dayTasks.length > 0 ? `<div class="day-tasks-count">${dayTasks.length}</div>` : ''}
+            <div class="week-day-header">
+                <div class="week-day-name">${dayNamesShort[i]}</div>
+                <div class="week-day-number">${dayDate.getDate()}</div>
             </div>
-            <div class="calendar-tasks">
-                ${dayTasks.slice(0, 3).map(task => `
-                    <div class="calendar-task ${getColorClass(task.color)}" onclick="editTask('${task.id}')" title="${escapeHtml(task.title)}">
-                        ${escapeHtml(task.title.length > 20 ? task.title.substring(0, 20) + '...' : task.title)}
+            <div class="week-tasks">
+                ${dayTasks.map(task => `
+                    <div class="week-task ${getColorClass(task.color)}" onclick="focusTask('${task.id}')" title="${escapeHtml(task.title)}">
+                        <div class="week-task-title">${escapeHtml(task.title)}</div>
+                        <div class="week-task-time">${formatTime(task.timeSpent)}</div>
                     </div>
                 `).join('')}
-                ${dayTasks.length > 3 ? `<div class="calendar-task" style="opacity: 0.7;">+${dayTasks.length - 3} еще</div>` : ''}
+                ${dayTasks.length === 0 ? '<div style="color: #94a3b8; font-size: 0.8rem; text-align: center; padding: 20px;">Нет задач</div>' : ''}
             </div>
         `;
 
-        calendarGrid.appendChild(dayEl);
+        weekCalendar.appendChild(dayEl);
     }
+}
 
-    // Добавляем дни следующего месяца
-    const remainingDays = 42 - (startDay + daysInMonth); // 6 недель * 7 дней
-    for (let day = 1; day <= remainingDays; day++) {
-        const dayEl = document.createElement('div');
-        dayEl.className = 'calendar-day other-month';
-        dayEl.innerHTML = `
-            <div class="day-number">${day}</div>
-        `;
-        calendarGrid.appendChild(dayEl);
-    }
+// Функция для фокуса на задаче в Kanban
+function focusTask(taskId) {
+    // Переключаемся на Kanban
+    switchTab('kanban');
+    
+    // Находим задачу и прокручиваем к ней
+    setTimeout(() => {
+        const taskElement = document.getElementById(`task-${taskId}`);
+        if (taskElement) {
+            taskElement.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            });
+            
+            // Добавляем эффект подсветки
+            taskElement.style.animation = 'pulse 1s ease-in-out';
+            setTimeout(() => {
+                taskElement.style.animation = '';
+            }, 1000);
+        }
+    }, 100);
 }
 
 // Сохранение и загрузка данных

@@ -17,7 +17,21 @@
         </header>
 
         <main class="main-content">
-            <div class="kanban-board" id="kanbanBoard">
+            <!-- Вкладки -->
+            <div class="tabs-container">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="kanban">
+                        <i class="fas fa-columns"></i> Kanban
+                    </button>
+                    <button class="tab-btn" data-tab="calendar">
+                        <i class="fas fa-calendar-alt"></i> Календарь
+                    </button>
+                </div>
+            </div>
+
+            <!-- Kanban доска -->
+            <div class="tab-content active" id="kanbanTab">
+                <div class="kanban-board" id="kanbanBoard">
                 <!-- Колонки статусов -->
                 <div class="kanban-column" data-status="todo">
                     <div class="column-header">
@@ -56,6 +70,24 @@
                     </div>
                     <div class="column-content" id="column-paused">
                         <!-- Задачи со статусом "Отложена" -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Календарь -->
+            <div class="tab-content" id="calendarTab">
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button class="btn btn-secondary" id="prevMonth">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2 id="currentMonth"></h2>
+                        <button class="btn btn-secondary" id="nextMonth">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid">
+                        <!-- Календарная сетка будет генерироваться JavaScript -->
                     </div>
                 </div>
             </div>

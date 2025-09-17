@@ -5,6 +5,7 @@ let timerInterval = null;
 let currentTaskId = null;
 let startTime = null;
 let totalTime = 0;
+let currentDate = new Date();
 
 // Статусы задач
 const TASK_STATUS = {
@@ -54,6 +55,19 @@ function setupEventListeners() {
     });
 
     taskForm.addEventListener('submit', handleTaskSubmit);
+
+    // Вкладки
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    // Календарь
+    const prevMonthBtn = document.getElementById('prevMonth');
+    const nextMonthBtn = document.getElementById('nextMonth');
+    
+    if (prevMonthBtn) prevMonthBtn.addEventListener('click', () => changeMonth(-1));
+    if (nextMonthBtn) nextMonthBtn.addEventListener('click', () => changeMonth(1));
 
 }
 
@@ -172,6 +186,11 @@ function renderTasks() {
     });
     
     updateTaskCounts();
+    
+    // Обновляем календарь, если он активен
+    if (document.getElementById('calendarTab').classList.contains('active')) {
+        renderCalendar();
+    }
 }
 
 // Обновление счетчиков задач
@@ -289,12 +308,12 @@ function setupColumnEventListeners() {
 // Получение класса цвета
 function getColorClass(color) {
     const colorMap = {
-        '#FFD700': 'yellow',
-        '#87CEEB': 'blue',
-        '#98FB98': 'green',
-        '#FFB6C1': 'pink',
-        '#DDA0DD': 'purple',
-        '#FFA500': 'orange'
+        '#fbbf24': 'yellow',
+        '#60a5fa': 'blue',
+        '#34d399': 'green',
+        '#f472b6': 'pink',
+        '#a78bfa': 'purple',
+        '#fb923c': 'orange'
     };
     return colorMap[color] || 'yellow';
 }
@@ -520,6 +539,125 @@ function getNotificationColor(type) {
         info: '#4299e1'
     };
     return colors[type] || '#4299e1';
+}
+
+// Переключение вкладок
+function switchTab(tabName) {
+    // Обновляем кнопки вкладок
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+    // Обновляем контент вкладок
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById(`${tabName}Tab`).classList.add('active');
+
+    // Если переключаемся на календарь, обновляем его
+    if (tabName === 'calendar') {
+        renderCalendar();
+    }
+}
+
+// Работа с календарем
+function changeMonth(direction) {
+    currentDate.setMonth(currentDate.getMonth() + direction);
+    renderCalendar();
+}
+
+function renderCalendar() {
+    const calendarGrid = document.getElementById('calendarGrid');
+    const currentMonthEl = document.getElementById('currentMonth');
+    
+    if (!calendarGrid || !currentMonthEl) return;
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    // Обновляем заголовок
+    const monthNames = [
+        'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+        'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+    ];
+    currentMonthEl.textContent = `${monthNames[month]} ${year}`;
+
+    // Очищаем календарь
+    calendarGrid.innerHTML = '';
+
+    // Добавляем заголовки дней недели
+    const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    weekdays.forEach(day => {
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'weekday-header';
+        dayHeader.textContent = day;
+        calendarGrid.appendChild(dayHeader);
+    });
+
+    // Получаем первый день месяца и количество дней
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDay = (firstDay.getDay() + 6) % 7; // Понедельник = 0
+
+    // Добавляем дни предыдущего месяца
+    const prevMonth = new Date(year, month - 1, 0);
+    for (let i = startDay - 1; i >= 0; i--) {
+        const day = document.createElement('div');
+        day.className = 'calendar-day other-month';
+        day.innerHTML = `
+            <div class="day-number">${prevMonth.getDate() - i}</div>
+        `;
+        calendarGrid.appendChild(day);
+    }
+
+    // Добавляем дни текущего месяца
+    const today = new Date();
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayDate = new Date(year, month, day);
+        const dayEl = document.createElement('div');
+        dayEl.className = 'calendar-day';
+        
+        if (dayDate.toDateString() === today.toDateString()) {
+            dayEl.classList.add('today');
+        }
+
+        // Получаем задачи на этот день
+        const dayTasks = tasks.filter(task => {
+            if (!task.dueDate) return false;
+            const taskDate = new Date(task.dueDate);
+            return taskDate.toDateString() === dayDate.toDateString();
+        });
+
+        dayEl.innerHTML = `
+            <div class="day-header">
+                <div class="day-number">${day}</div>
+                ${dayTasks.length > 0 ? `<div class="day-tasks-count">${dayTasks.length}</div>` : ''}
+            </div>
+            <div class="calendar-tasks">
+                ${dayTasks.slice(0, 3).map(task => `
+                    <div class="calendar-task ${getColorClass(task.color)}" onclick="editTask('${task.id}')" title="${escapeHtml(task.title)}">
+                        ${escapeHtml(task.title.length > 20 ? task.title.substring(0, 20) + '...' : task.title)}
+                    </div>
+                `).join('')}
+                ${dayTasks.length > 3 ? `<div class="calendar-task" style="opacity: 0.7;">+${dayTasks.length - 3} еще</div>` : ''}
+            </div>
+        `;
+
+        calendarGrid.appendChild(dayEl);
+    }
+
+    // Добавляем дни следующего месяца
+    const remainingDays = 42 - (startDay + daysInMonth); // 6 недель * 7 дней
+    for (let day = 1; day <= remainingDays; day++) {
+        const dayEl = document.createElement('div');
+        dayEl.className = 'calendar-day other-month';
+        dayEl.innerHTML = `
+            <div class="day-number">${day}</div>
+        `;
+        calendarGrid.appendChild(dayEl);
+    }
 }
 
 // Сохранение и загрузка данных

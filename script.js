@@ -32,7 +32,11 @@ function initializeApp() {
     setupEventListeners();
     setupColumnEventListeners();
     renderTasks();
-    renderWeekCalendar(); // Инициализируем календарь
+    
+    // Инициализируем календарь с небольшой задержкой
+    setTimeout(() => {
+        renderWeekCalendar();
+    }, 100);
 }
 
 // Настройка обработчиков событий
@@ -190,7 +194,9 @@ function renderTasks() {
     
     // Обновляем календарь, если он активен
     if (document.getElementById('calendarTab').classList.contains('active')) {
-        renderWeekCalendar();
+        setTimeout(() => {
+            renderWeekCalendar();
+        }, 50);
     }
 }
 
@@ -558,7 +564,9 @@ function switchTab(tabName) {
 
     // Если переключаемся на календарь, обновляем его
     if (tabName === 'calendar') {
-        renderWeekCalendar();
+        setTimeout(() => {
+            renderWeekCalendar();
+        }, 50);
     }
 }
 
@@ -572,7 +580,10 @@ function renderWeekCalendar() {
     const weekCalendar = document.getElementById('weekCalendar');
     const currentWeekEl = document.getElementById('currentWeek');
     
-    if (!weekCalendar || !currentWeekEl) return;
+    if (!weekCalendar || !currentWeekEl) {
+        console.log('Элементы календаря не найдены:', { weekCalendar, currentWeekEl });
+        return;
+    }
 
     console.log('Рендеринг календаря, всего задач:', tasks.length);
     console.log('Задачи с датами:', tasks.filter(task => task.dueDate));
@@ -607,6 +618,7 @@ function renderWeekCalendar() {
 
     // Очищаем календарь
     weekCalendar.innerHTML = '';
+    console.log('Календарь очищен, начинаем создание дней');
 
     // Названия дней недели
     const dayNames = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
@@ -655,6 +667,8 @@ function renderWeekCalendar() {
 
         weekCalendar.appendChild(dayEl);
     }
+    
+    console.log('Календарь отрендерен, создано дней:', weekCalendar.children.length);
 }
 
 // Функция для фокуса на задаче в Kanban

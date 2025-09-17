@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Планнер задач</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-tasks"></i> Планнер задач</h1>
+            <button class="btn btn-primary" id="addTaskBtn">
+                <i class="fas fa-plus"></i> Добавить задачу
+            </button>
+        </header>
+
+        <main class="main-content">
+            <div class="board" id="taskBoard">
+                <!-- Задачи будут добавляться сюда -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Модальное окно для создания задачи -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Создать новую задачу</h2>
+                <button class="close-btn" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form class="modal-form" id="taskForm">
+                <div class="form-group">
+                    <label for="taskTitle">Название задачи *</label>
+                    <input type="text" id="taskTitle" name="title" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="taskDescription">Описание</label>
+                    <textarea id="taskDescription" name="description" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="taskDate">Дата исполнения</label>
+                    <input type="date" id="taskDate" name="dueDate">
+                </div>
+
+                <div class="form-group">
+                    <label for="taskColor">Цвет задачи</label>
+                    <div class="color-picker">
+                        <input type="radio" id="color-yellow" name="color" value="#FFD700" checked>
+                        <label for="color-yellow" class="color-option" style="background-color: #FFD700;"></label>
+                        
+                        <input type="radio" id="color-blue" name="color" value="#87CEEB">
+                        <label for="color-blue" class="color-option" style="background-color: #87CEEB;"></label>
+                        
+                        <input type="radio" id="color-green" name="color" value="#98FB98">
+                        <label for="color-green" class="color-option" style="background-color: #98FB98;"></label>
+                        
+                        <input type="radio" id="color-pink" name="color" value="#FFB6C1">
+                        <label for="color-pink" class="color-option" style="background-color: #FFB6C1;"></label>
+                        
+                        <input type="radio" id="color-purple" name="color" value="#DDA0DD">
+                        <label for="color-purple" class="color-option" style="background-color: #DDA0DD;"></label>
+                        
+                        <input type="radio" id="color-orange" name="color" value="#FFA500">
+                        <label for="color-orange" class="color-option" style="background-color: #FFA500;"></label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Отменить</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно для таймера -->
+    <div class="modal" id="timerModal">
+        <div class="modal-content timer-modal">
+            <div class="modal-header">
+                <h2>Таймер задачи</h2>
+                <button class="close-btn" id="closeTimerModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="timer-content">
+                <div class="timer-display" id="timerDisplay">00:00:00</div>
+                <div class="timer-controls">
+                    <button class="btn btn-success" id="startTimer">
+                        <i class="fas fa-play"></i> Старт
+                    </button>
+                    <button class="btn btn-warning" id="pauseTimer">
+                        <i class="fas fa-pause"></i> Пауза
+                    </button>
+                    <button class="btn btn-danger" id="stopTimer">
+                        <i class="fas fa-stop"></i> Стоп
+                    </button>
+                </div>
+                <div class="timer-info">
+                    <p>Задача: <span id="timerTaskTitle"></span></p>
+                    <p>Время работы: <span id="totalTime"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

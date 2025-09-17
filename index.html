@@ -17,8 +17,47 @@
         </header>
 
         <main class="main-content">
-            <div class="board" id="taskBoard">
-                <!-- Задачи будут добавляться сюда -->
+            <div class="kanban-board" id="kanbanBoard">
+                <!-- Колонки статусов -->
+                <div class="kanban-column" data-status="todo">
+                    <div class="column-header">
+                        <h3><i class="fas fa-circle" style="color: #a0aec0;"></i> Взять в работу</h3>
+                        <span class="task-count" id="count-todo">0</span>
+                    </div>
+                    <div class="column-content" id="column-todo">
+                        <!-- Задачи со статусом "Взять в работу" -->
+                    </div>
+                </div>
+
+                <div class="kanban-column" data-status="in-progress">
+                    <div class="column-header">
+                        <h3><i class="fas fa-circle" style="color: #ed8936;"></i> В работе</h3>
+                        <span class="task-count" id="count-in-progress">0</span>
+                    </div>
+                    <div class="column-content" id="column-in-progress">
+                        <!-- Задачи со статусом "В работе" -->
+                    </div>
+                </div>
+
+                <div class="kanban-column" data-status="done">
+                    <div class="column-header">
+                        <h3><i class="fas fa-circle" style="color: #48bb78;"></i> Готово</h3>
+                        <span class="task-count" id="count-done">0</span>
+                    </div>
+                    <div class="column-content" id="column-done">
+                        <!-- Задачи со статусом "Готово" -->
+                    </div>
+                </div>
+
+                <div class="kanban-column" data-status="paused">
+                    <div class="column-header">
+                        <h3><i class="fas fa-circle" style="color: #f56565;"></i> Отложена</h3>
+                        <span class="task-count" id="count-paused">0</span>
+                    </div>
+                    <div class="column-content" id="column-paused">
+                        <!-- Задачи со статусом "Отложена" -->
+                    </div>
+                </div>
             </div>
         </main>
     </div>

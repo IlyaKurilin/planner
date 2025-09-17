@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeApp() {
     loadTasks();
     setupEventListeners();
+    setupColumnEventListeners();
     renderTasks();
 }
 
@@ -129,26 +130,57 @@ function generateId() {
 
 // Рендеринг задач
 function renderTasks() {
-    const board = document.getElementById('taskBoard');
+    const kanbanBoard = document.getElementById('kanbanBoard');
+    
+    // Очищаем все колонки
+    Object.values(TASK_STATUS).forEach(status => {
+        const column = document.getElementById(`column-${status}`);
+        if (column) {
+            column.innerHTML = '';
+        }
+    });
     
     if (tasks.length === 0) {
-        board.innerHTML = `
-            <div class="drop-zone" style="grid-column: 1 / -1;">
-                <i class="fas fa-tasks" style="font-size: 3rem; margin-bottom: 20px; display: block;"></i>
-                <h3>Пока нет задач</h3>
-                <p>Нажмите "Добавить задачу" чтобы создать первую задачу</p>
-            </div>
-        `;
+        // Показываем сообщение в первой колонке
+        const firstColumn = document.getElementById('column-todo');
+        if (firstColumn) {
+            firstColumn.innerHTML = `
+                <div class="empty-column">
+                    <i class="fas fa-tasks" style="font-size: 2rem; margin-bottom: 15px; display: block; color: #a0aec0;"></i>
+                    <h4 style="color: #a0aec0; margin-bottom: 10px;">Пока нет задач</h4>
+                    <p style="color: #a0aec0; font-size: 0.9rem;">Нажмите "Добавить задачу" чтобы создать первую задачу</p>
+                </div>
+            `;
+        }
+        updateTaskCounts();
         return;
     }
 
-    board.innerHTML = tasks.map(task => createTaskSticker(task)).join('');
-    
-    // Добавляем обработчики событий для каждой задачи
+    // Распределяем задачи по колонкам
     tasks.forEach(task => {
-        const taskElement = document.getElementById(`task-${task.id}`);
-        if (taskElement) {
-            setupTaskEventListeners(taskElement, task);
+        const column = document.getElementById(`column-${task.status}`);
+        if (column) {
+            const taskElement = createTaskSticker(task);
+            column.insertAdjacentHTML('beforeend', taskElement);
+            
+            // Добавляем обработчики событий
+            const taskEl = document.getElementById(`task-${task.id}`);
+            if (taskEl) {
+                setupTaskEventListeners(taskEl, task);
+            }
+        }
+    });
+    
+    updateTaskCounts();
+}
+
+// Обновление счетчиков задач
+function updateTaskCounts() {
+    Object.values(TASK_STATUS).forEach(status => {
+        const count = tasks.filter(task => task.status === status).length;
+        const countElement = document.getElementById(`count-${status}`);
+        if (countElement) {
+            countElement.textContent = count;
         }
     });
 }
@@ -158,12 +190,13 @@ function createTaskSticker(task) {
     const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString('ru-RU') : 'Не указана';
     const timeSpent = formatTime(task.timeSpent);
     const isTimerRunning = task.timerRunning;
+    const shortTitle = task.title.length > 16 ? task.title.substring(0, 16) + '...' : task.title;
     
     return `
         <div class="task-sticker ${getColorClass(task.color)}" id="task-${task.id}" data-task-id="${task.id}">
             <div class="task-header">
                 <div>
-                    <h3 class="task-title">${escapeHtml(task.title)}</h3>
+                    <h3 class="task-title" title="${escapeHtml(task.title)}">${escapeHtml(shortTitle)}</h3>
                 </div>
                 <button class="btn btn-danger" onclick="deleteTask('${task.id}')" style="padding: 5px 8px; font-size: 0.8rem;">
                     <i class="fas fa-trash"></i>
@@ -183,11 +216,9 @@ function createTaskSticker(task) {
                 </div>
             </div>
             
-            <select class="status-select status-${task.status}" onchange="updateTaskStatus('${task.id}', this.value)">
-                ${Object.entries(STATUS_LABELS).map(([value, label]) => 
-                    `<option value="${value}" ${task.status === value ? 'selected' : ''}>${label}</option>`
-                ).join('')}
-            </select>
+            <div class="task-status">
+                <span class="status-badge status-${task.status}">${STATUS_LABELS[task.status]}</span>
+            </div>
             
             <div class="task-actions">
                 ${isTimerRunning ? `
@@ -222,6 +253,36 @@ function setupTaskEventListeners(taskElement, task) {
     
     taskElement.addEventListener('dragend', () => {
         taskElement.classList.remove('dragging');
+        // Убираем подсветку со всех колонок
+        document.querySelectorAll('.column-content').forEach(col => {
+            col.classList.remove('drag-over');
+        });
+    });
+}
+
+// Настройка drag & drop для колонок
+function setupColumnEventListeners() {
+    document.querySelectorAll('.column-content').forEach(column => {
+        column.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            column.classList.add('drag-over');
+        });
+        
+        column.addEventListener('dragleave', (e) => {
+            if (!column.contains(e.relatedTarget)) {
+                column.classList.remove('drag-over');
+            }
+        });
+        
+        column.addEventListener('drop', (e) => {
+            e.preventDefault();
+            column.classList.remove('drag-over');
+            
+            const taskId = e.dataTransfer.getData('text/plain');
+            const newStatus = column.closest('.kanban-column').dataset.status;
+            
+            updateTaskStatus(taskId, newStatus);
+        });
     });
 }
 
@@ -241,10 +302,11 @@ function getColorClass(color) {
 // Обновление статуса задачи
 function updateTaskStatus(taskId, newStatus) {
     const task = tasks.find(t => t.id === taskId);
-    if (task) {
+    if (task && task.status !== newStatus) {
         task.status = newStatus;
         saveTasks();
-        showNotification(`Статус задачи изменен на "${STATUS_LABELS[newStatus]}"`, 'info');
+        renderTasks();
+        showNotification(`Задача перемещена в "${STATUS_LABELS[newStatus]}"`, 'info');
     }
 }
 

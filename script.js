@@ -54,24 +54,6 @@ function setupEventListeners() {
 
     taskForm.addEventListener('submit', handleTaskSubmit);
 
-    // Модальное окно таймера
-    const timerModal = document.getElementById('timerModal');
-    const closeTimerModal = document.getElementById('closeTimerModal');
-    const startTimer = document.getElementById('startTimer');
-    const pauseTimer = document.getElementById('pauseTimer');
-    const stopTimer = document.getElementById('stopTimer');
-
-    closeTimerModal.addEventListener('click', () => closeModalWindow('timerModal'));
-    
-    timerModal.addEventListener('click', (e) => {
-        if (e.target === timerModal) {
-            closeModalWindow('timerModal');
-        }
-    });
-
-    startTimer.addEventListener('click', startTaskTimer);
-    pauseTimer.addEventListener('click', pauseTaskTimer);
-    stopTimer.addEventListener('click', stopTaskTimer);
 }
 
 // Работа с модальными окнами
@@ -91,29 +73,53 @@ function closeModalWindow(modalId) {
     }
 }
 
-// Обработка создания задачи
+// Обработка создания/редактирования задачи
 function handleTaskSubmit(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
-    const taskData = {
-        id: generateId(),
-        title: formData.get('title'),
-        description: formData.get('description'),
-        dueDate: formData.get('dueDate'),
-        color: formData.get('color'),
-        status: TASK_STATUS.TODO,
-        createdAt: new Date().toISOString(),
-        timeSpent: 0,
-        timerRunning: false
-    };
-
-    tasks.push(taskData);
-    saveTasks();
-    renderTasks();
-    closeModalWindow('taskModal');
+    const editingTaskId = e.target.dataset.editingTaskId;
     
-    showNotification('Задача успешно создана!', 'success');
+    if (editingTaskId) {
+        // Редактирование существующей задачи
+        const task = tasks.find(t => t.id === editingTaskId);
+        if (task) {
+            task.title = formData.get('title');
+            task.description = formData.get('description');
+            task.dueDate = formData.get('dueDate');
+            task.color = formData.get('color');
+            
+            saveTasks();
+            renderTasks();
+            closeModalWindow('taskModal');
+            showNotification('Задача обновлена!', 'success');
+        }
+        
+        // Сбрасываем флаг редактирования
+        e.target.dataset.editingTaskId = '';
+        document.querySelector('#taskModal .modal-header h2').textContent = 'Создать новую задачу';
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.textContent = 'Сохранить';
+    } else {
+        // Создание новой задачи
+        const taskData = {
+            id: generateId(),
+            title: formData.get('title'),
+            description: formData.get('description'),
+            dueDate: formData.get('dueDate'),
+            color: formData.get('color'),
+            status: TASK_STATUS.TODO,
+            createdAt: new Date().toISOString(),
+            timeSpent: 0,
+            timerRunning: false
+        };
+
+        tasks.push(taskData);
+        saveTasks();
+        renderTasks();
+        closeModalWindow('taskModal');
+        showNotification('Задача успешно создана!', 'success');
+    }
 }
 
 // Генерация уникального ID
@@ -151,6 +157,7 @@ function renderTasks() {
 function createTaskSticker(task) {
     const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString('ru-RU') : 'Не указана';
     const timeSpent = formatTime(task.timeSpent);
+    const isTimerRunning = task.timerRunning;
     
     return `
         <div class="task-sticker ${getColorClass(task.color)}" id="task-${task.id}" data-task-id="${task.id}">
@@ -172,20 +179,29 @@ function createTaskSticker(task) {
                 </div>
                 <div class="task-time">
                     <i class="fas fa-clock"></i>
-                    <span>${timeSpent}</span>
+                    <span id="time-${task.id}">${timeSpent}</span>
                 </div>
             </div>
             
-            <select class="status-select" onchange="updateTaskStatus('${task.id}', this.value)">
+            <select class="status-select status-${task.status}" onchange="updateTaskStatus('${task.id}', this.value)">
                 ${Object.entries(STATUS_LABELS).map(([value, label]) => 
                     `<option value="${value}" ${task.status === value ? 'selected' : ''}>${label}</option>`
                 ).join('')}
             </select>
             
             <div class="task-actions">
-                <button class="btn btn-primary" onclick="openTimer('${task.id}')">
-                    <i class="fas fa-play"></i> Таймер
-                </button>
+                ${isTimerRunning ? `
+                    <button class="btn btn-warning" onclick="pauseTaskTimer('${task.id}')">
+                        <i class="fas fa-pause"></i> Пауза
+                    </button>
+                    <button class="btn btn-danger" onclick="stopTaskTimer('${task.id}')">
+                        <i class="fas fa-stop"></i> Стоп
+                    </button>
+                ` : `
+                    <button class="btn btn-success" onclick="startTaskTimer('${task.id}')">
+                        <i class="fas fa-play"></i> Старт
+                    </button>
+                `}
                 <button class="btn btn-secondary" onclick="editTask('${task.id}')">
                     <i class="fas fa-edit"></i> Редактировать
                 </button>
@@ -253,122 +269,114 @@ function editTask(taskId) {
     document.getElementById('taskDate').value = task.dueDate || '';
     document.querySelector(`input[name="color"][value="${task.color}"]`).checked = true;
 
-    // Временно изменяем обработчик формы
+    // Сохраняем ID редактируемой задачи
     const form = document.getElementById('taskForm');
-    const originalHandler = form.onsubmit;
+    form.dataset.editingTaskId = taskId;
     
-    form.onsubmit = function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(e.target);
-        task.title = formData.get('title');
-        task.description = formData.get('description');
-        task.dueDate = formData.get('dueDate');
-        task.color = formData.get('color');
-        
-        saveTasks();
-        renderTasks();
-        closeModalWindow('taskModal');
-        showNotification('Задача обновлена!', 'success');
-        
-        // Восстанавливаем оригинальный обработчик
-        form.onsubmit = originalHandler;
-    };
+    // Изменяем заголовок модального окна
+    document.querySelector('#taskModal .modal-header h2').textContent = 'Редактировать задачу';
+    
+    // Изменяем текст кнопки
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.textContent = 'Обновить';
 
     openModal('taskModal');
 }
 
 // Работа с таймером
-function openTimer(taskId) {
+function startTaskTimer(taskId) {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
+    // Останавливаем все другие таймеры
+    stopAllTimers();
+    
     currentTaskId = taskId;
-    totalTime = task.timeSpent;
+    startTime = Date.now();
+    timerInterval = setInterval(() => updateTaskTimer(taskId), 1000);
     
-    document.getElementById('timerTaskTitle').textContent = task.title;
-    document.getElementById('totalTime').textContent = formatTime(totalTime);
+    // Обновляем статус задачи на "В работе"
+    task.status = TASK_STATUS.IN_PROGRESS;
+    task.timerRunning = true;
+    saveTasks();
+    renderTasks();
     
-    updateTimerDisplay();
-    openModal('timerModal');
+    showNotification(`Таймер запущен для задачи "${task.title}"`, 'success');
 }
 
-function startTaskTimer() {
-    if (currentTaskId) {
-        startTime = Date.now();
-        timerInterval = setInterval(updateTimerDisplay, 1000);
-        
-        // Обновляем кнопки
-        document.getElementById('startTimer').disabled = true;
-        document.getElementById('pauseTimer').disabled = false;
-        document.getElementById('stopTimer').disabled = false;
-        
-        // Обновляем статус задачи
-        const task = tasks.find(t => t.id === currentTaskId);
-        if (task) {
-            task.timerRunning = true;
-            saveTasks();
-        }
-    }
-}
+function pauseTaskTimer(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
 
-function pauseTaskTimer() {
     if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;
         
         if (startTime) {
-            totalTime += Date.now() - startTime;
+            task.timeSpent += Date.now() - startTime;
             startTime = null;
         }
         
-        // Обновляем кнопки
-        document.getElementById('startTimer').disabled = false;
-        document.getElementById('pauseTimer').disabled = true;
+        // Обновляем статус задачи на "Отложена"
+        task.status = TASK_STATUS.PAUSED;
+        task.timerRunning = false;
+        saveTasks();
+        renderTasks();
         
-        // Обновляем статус задачи
-        const task = tasks.find(t => t.id === currentTaskId);
-        if (task) {
-            task.timerRunning = false;
-            task.timeSpent = totalTime;
-            saveTasks();
-        }
+        showNotification(`Таймер приостановлен для задачи "${task.title}"`, 'warning');
     }
 }
 
-function stopTaskTimer() {
-    pauseTaskTimer();
-    
-    // Обновляем кнопки
-    document.getElementById('startTimer').disabled = false;
-    document.getElementById('pauseTimer').disabled = true;
-    document.getElementById('stopTimer').disabled = true;
-    
-    // Сохраняем время в задачу
-    if (currentTaskId) {
-        const task = tasks.find(t => t.id === currentTaskId);
-        if (task) {
-            task.timeSpent = totalTime;
-            task.timerRunning = false;
-            saveTasks();
+function stopTaskTimer(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        
+        if (startTime) {
+            task.timeSpent += Date.now() - startTime;
+            startTime = null;
         }
+        
+        // Обновляем статус задачи на "Готово"
+        task.status = TASK_STATUS.DONE;
+        task.timerRunning = false;
+        saveTasks();
+        renderTasks();
+        
+        showNotification(`Таймер остановлен для задачи "${task.title}"`, 'info');
     }
-    
-    closeModalWindow('timerModal');
-    renderTasks();
-    showNotification('Таймер остановлен', 'info');
 }
 
-function updateTimerDisplay() {
+function stopAllTimers() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    
+    if (currentTaskId && startTime) {
+        const task = tasks.find(t => t.id === currentTaskId);
+        if (task) {
+            task.timeSpent += Date.now() - startTime;
+            task.timerRunning = false;
+        }
+        startTime = null;
+    }
+}
+
+function updateTaskTimer(taskId) {
     if (!startTime) return;
     
-    const currentTime = totalTime + (Date.now() - startTime);
-    const hours = Math.floor(currentTime / 3600000);
-    const minutes = Math.floor((currentTime % 3600000) / 60000);
-    const seconds = Math.floor((currentTime % 60000) / 1000);
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
     
-    document.getElementById('timerDisplay').textContent = 
-        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    const currentTime = task.timeSpent + (Date.now() - startTime);
+    const timeElement = document.getElementById(`time-${taskId}`);
+    if (timeElement) {
+        timeElement.textContent = formatTime(currentTime);
+    }
 }
 
 // Форматирование времени

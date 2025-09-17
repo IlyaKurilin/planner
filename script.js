@@ -32,6 +32,7 @@ function initializeApp() {
     setupEventListeners();
     setupColumnEventListeners();
     renderTasks();
+    renderWeekCalendar(); // Инициализируем календарь
 }
 
 // Настройка обработчиков событий
@@ -573,6 +574,9 @@ function renderWeekCalendar() {
     
     if (!weekCalendar || !currentWeekEl) return;
 
+    console.log('Рендеринг календаря, всего задач:', tasks.length);
+    console.log('Задачи с датами:', tasks.filter(task => task.dueDate));
+
     // Получаем начало недели (понедельник)
     const startOfWeek = new Date(currentDate);
     const day = startOfWeek.getDay();
@@ -627,6 +631,11 @@ function renderWeekCalendar() {
             const taskDate = new Date(task.dueDate);
             return taskDate.toDateString() === dayDate.toDateString();
         });
+
+        // Отладочная информация
+        if (dayTasks.length > 0) {
+            console.log(`День ${dayDate.getDate()}: найдено ${dayTasks.length} задач`, dayTasks);
+        }
 
         dayEl.innerHTML = `
             <div class="week-day-header">

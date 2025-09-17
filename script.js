@@ -23,20 +23,42 @@ const STATUS_LABELS = {
 };
 
 // Инициализация приложения
+console.log('=== СКРИПТ ЗАГРУЖЕН ===');
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DOM ЗАГРУЖЕН ===');
     initializeApp();
 });
 
 function initializeApp() {
+    console.log('=== НАЧАЛО initializeApp ===');
+    
     loadTasks();
     setupEventListeners();
     setupColumnEventListeners();
     renderTasks();
     
-    // Инициализируем календарь с небольшой задержкой
-    setTimeout(() => {
+    // Инициализируем календарь сразу
+    console.log('Инициализация календаря...');
+    
+    // Проверяем, что элементы календаря существуют
+    const weekCalendarEl = document.getElementById('weekCalendar');
+    const currentWeekEl = document.getElementById('currentWeek');
+    console.log('Элементы календаря при инициализации:', { weekCalendarEl, currentWeekEl });
+    
+    if (weekCalendarEl && currentWeekEl) {
         renderWeekCalendar();
-    }, 100);
+        console.log('Календарь инициализирован');
+    } else {
+        console.log('ОШИБКА: Элементы календаря не найдены при инициализации!');
+        // Попробуем еще раз через небольшую задержку
+        setTimeout(() => {
+            console.log('Повторная попытка инициализации календаря...');
+            renderWeekCalendar();
+        }, 100);
+    }
+    
+    console.log('=== КОНЕЦ initializeApp ===');
 }
 
 // Настройка обработчиков событий
@@ -48,7 +70,10 @@ function setupEventListeners() {
     const cancelBtn = document.getElementById('cancelBtn');
     const taskForm = document.getElementById('taskForm');
 
-    addTaskBtn.addEventListener('click', () => openModal('taskModal'));
+    addTaskBtn.addEventListener('click', () => {
+        console.log('Кнопка добавления задачи нажата');
+        openModal('taskModal');
+    });
     closeModal.addEventListener('click', () => closeModalWindow('taskModal'));
     cancelBtn.addEventListener('click', () => closeModalWindow('taskModal'));
     
@@ -59,13 +84,18 @@ function setupEventListeners() {
         }
     });
 
-    taskForm.addEventListener('submit', handleTaskSubmit);
+    taskForm.addEventListener('submit', (e) => {
+        e.preventDefault(); // Предотвращаем стандартную отправку формы
+        console.log('Форма отправлена, предотвращаем перерендер');
+        
+        // Валидация формы
+        if (validateForm()) {
+            handleTaskSubmit(e);
+        }
+    });
 
     // Вкладки
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
+    // Обработчики вкладок убраны - теперь только одна страница
 
     // Календарь
     const prevWeekBtn = document.getElementById('prevWeek');
@@ -76,11 +106,49 @@ function setupEventListeners() {
 
 }
 
+// Валидация формы
+function validateForm() {
+    const title = document.getElementById('taskTitle').value.trim();
+    const description = document.getElementById('taskDescription').value.trim();
+    const dueDate = document.getElementById('taskDate').value;
+    
+    let isValid = true;
+    let errorMessage = '';
+    
+    if (!title) {
+        errorMessage += 'Название задачи обязательно для заполнения.\n';
+        isValid = false;
+    }
+    
+    if (!description) {
+        errorMessage += 'Описание обязательно для заполнения.\n';
+        isValid = false;
+    }
+    
+    if (!dueDate) {
+        errorMessage += 'Дата исполнения обязательна для заполнения.\n';
+        isValid = false;
+    }
+    
+    if (!isValid) {
+        alert(errorMessage);
+    }
+    
+    return isValid;
+}
+
 // Работа с модальными окнами
 function openModal(modalId) {
+    console.log('Открываем модальное окно:', modalId);
     const modal = document.getElementById(modalId);
-    modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
+    console.log('Найденное модальное окно:', modal);
+    if (modal) {
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        console.log('Модальное окно открыто');
+    } else {
+        console.log('ОШИБКА: Модальное окно не найдено!');
+    }
 }
 
 function closeModalWindow(modalId) {
@@ -192,12 +260,8 @@ function renderTasks() {
     
     updateTaskCounts();
     
-    // Обновляем календарь, если он активен
-    if (document.getElementById('calendarTab').classList.contains('active')) {
-        setTimeout(() => {
-            renderWeekCalendar();
-        }, 50);
-    }
+    // Обновляем календарь
+    renderWeekCalendar();
 }
 
 // Обновление счетчиков задач
@@ -548,27 +612,7 @@ function getNotificationColor(type) {
     return colors[type] || '#4299e1';
 }
 
-// Переключение вкладок
-function switchTab(tabName) {
-    // Обновляем кнопки вкладок
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-
-    // Обновляем контент вкладок
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-    });
-    document.getElementById(`${tabName}Tab`).classList.add('active');
-
-    // Если переключаемся на календарь, обновляем его
-    if (tabName === 'calendar') {
-        setTimeout(() => {
-            renderWeekCalendar();
-        }, 50);
-    }
-}
+// Функция переключения вкладок убрана - теперь только одна страница
 
 // Работа с календарем
 function changeWeek(direction) {
@@ -577,13 +621,24 @@ function changeWeek(direction) {
 }
 
 function renderWeekCalendar() {
+    console.log('=== НАЧАЛО renderWeekCalendar ===');
+    
+    // Ищем элементы календаря
     const weekCalendar = document.getElementById('weekCalendar');
     const currentWeekEl = document.getElementById('currentWeek');
     
+    console.log('Элементы календаря:', { weekCalendar, currentWeekEl });
+    
     if (!weekCalendar || !currentWeekEl) {
-        console.log('Элементы календаря не найдены:', { weekCalendar, currentWeekEl });
+        console.log('ОШИБКА: Элементы календаря не найдены!');
         return;
     }
+    
+    // Проверяем, в каком контейнере находится weekCalendar
+    console.log('weekCalendar родитель:', weekCalendar.parentElement);
+    console.log('weekCalendar родитель родителя:', weekCalendar.parentElement?.parentElement);
+    console.log('weekCalendar ID родителя:', weekCalendar.parentElement?.id);
+    console.log('weekCalendar класс родителя:', weekCalendar.parentElement?.className);
 
     console.log('Рендеринг календаря, всего задач:', tasks.length);
     console.log('Задачи с датами:', tasks.filter(task => task.dueDate));
@@ -626,15 +681,20 @@ function renderWeekCalendar() {
 
     // Создаем дни недели
     const today = new Date();
+    console.log('Начинаем создание дней недели, startOfWeek:', startOfWeek);
+    
     for (let i = 0; i < 7; i++) {
         const dayDate = new Date(startOfWeek);
         dayDate.setDate(startOfWeek.getDate() + i);
+        
+        console.log(`Создаем день ${i}:`, dayDate);
         
         const dayEl = document.createElement('div');
         dayEl.className = 'week-day';
         
         if (dayDate.toDateString() === today.toDateString()) {
             dayEl.classList.add('today');
+            console.log('Добавлен класс today для дня:', dayDate);
         }
 
         // Получаем задачи на этот день
@@ -649,32 +709,119 @@ function renderWeekCalendar() {
             console.log(`День ${dayDate.getDate()}: найдено ${dayTasks.length} задач`, dayTasks);
         }
 
-        dayEl.innerHTML = `
+        const dayHTML = `
             <div class="week-day-header">
                 <div class="week-day-name">${dayNamesShort[i]}</div>
                 <div class="week-day-number">${dayDate.getDate()}</div>
             </div>
             <div class="week-tasks">
-                ${dayTasks.map(task => `
+                ${dayTasks.slice(0, 5).map(task => `
                     <div class="week-task ${getColorClass(task.color)}" onclick="focusTask('${task.id}')" title="${escapeHtml(task.title)}">
                         <div class="week-task-title">${escapeHtml(task.title)}</div>
                         <div class="week-task-time">${formatTime(task.timeSpent)}</div>
                     </div>
                 `).join('')}
+                ${dayTasks.length > 5 ? `<div class="more-tasks-btn" onclick="showAllTasks('${dayDate.toISOString().split('T')[0]}')" style="color: #94a3b8; font-size: 0.7rem; text-align: center; padding: 8px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; margin-top: 4px; cursor: pointer; transition: all 0.3s ease;">+${dayTasks.length - 5} еще</div>` : ''}
                 ${dayTasks.length === 0 ? '<div style="color: #94a3b8; font-size: 0.8rem; text-align: center; padding: 20px;">Нет задач</div>' : ''}
             </div>
         `;
-
+        
+        dayEl.innerHTML = dayHTML;
+        console.log(`День ${i} HTML создан:`, dayEl.outerHTML.substring(0, 200) + '...');
+        
         weekCalendar.appendChild(dayEl);
+        console.log(`День ${i} добавлен в календарь`);
     }
     
     console.log('Календарь отрендерен, создано дней:', weekCalendar.children.length);
+    console.log('Видимость календаря:', {
+        display: getComputedStyle(weekCalendar).display,
+        visibility: getComputedStyle(weekCalendar).visibility,
+        opacity: getComputedStyle(weekCalendar).opacity,
+        height: getComputedStyle(weekCalendar).height,
+        parentVisible: getComputedStyle(weekCalendar.parentElement).display
+    });
+    
+    // Проверяем, где именно находятся созданные элементы
+    console.log('weekCalendar после рендера:', weekCalendar);
+    console.log('weekCalendar.innerHTML длина:', weekCalendar.innerHTML.length);
+    console.log('weekCalendar.children:', weekCalendar.children);
+    console.log('Первый дочерний элемент:', weekCalendar.children[0]);
+    
+    // Проверяем через 2 секунды, не удалились ли элементы
+    setTimeout(() => {
+        console.log('Проверка через 2 секунды - дней в календаре:', weekCalendar.children.length);
+        if (weekCalendar.children.length === 0) {
+            console.log('ОШИБКА: Элементы календаря были удалены!');
+        }
+    }, 2000);
+    
+    // Принудительная проверка элементов дней
+    const dayElements = weekCalendar.querySelectorAll('.week-day');
+    console.log('Найдено элементов .week-day:', dayElements.length);
+    dayElements.forEach((day, index) => {
+        const styles = getComputedStyle(day);
+        console.log(`День ${index}:`, {
+            display: styles.display,
+            visibility: styles.visibility,
+            opacity: styles.opacity,
+            height: styles.height,
+            width: styles.width,
+            backgroundColor: styles.backgroundColor
+        });
+        
+        // Дни должны отображаться автоматически
+    });
+}
+
+// Функция для показа всех задач дня
+function showAllTasks(date) {
+    console.log('Показываем все задачи для даты:', date);
+    
+    // Находим все задачи на эту дату
+    const dayTasks = tasks.filter(task => {
+        if (!task.dueDate) return false;
+        const taskDate = new Date(task.dueDate);
+        const targetDate = new Date(date);
+        return taskDate.toDateString() === targetDate.toDateString();
+    });
+    
+    if (dayTasks.length > 0) {
+        // Создаем модальное окно для показа всех задач
+        const modal = document.createElement('div');
+        modal.className = 'modal show';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h2>Задачи на ${new Date(date).toLocaleDateString('ru-RU')}</h2>
+                    <button class="close-btn" onclick="this.closest('.modal').remove()">&times;</button>
+                </div>
+                <div style="padding: 20px;">
+                    ${dayTasks.map(task => `
+                        <div class="week-task ${getColorClass(task.color)}" onclick="focusTask('${task.id}'); this.closest('.modal').remove();" style="margin-bottom: 12px; cursor: pointer;">
+                            <div class="week-task-title">${escapeHtml(task.title)}</div>
+                            <div class="week-task-time">${formatTime(task.timeSpent)}</div>
+                            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;">${escapeHtml(task.description)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Закрытие по клику вне модального окна
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
 }
 
 // Функция для фокуса на задаче в Kanban
 function focusTask(taskId) {
-    // Переключаемся на Kanban
-    switchTab('kanban');
+    // Календарь теперь на той же странице, переключение не нужно
     
     // Находим задачу и прокручиваем к ней
     setTimeout(() => {

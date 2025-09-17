@@ -147,58 +147,17 @@ body {
     background: transparent;
 }
 
-/* Вкладки */
-.tabs-container {
-    margin-bottom: 30px;
+/* Секции */
+.kanban-section {
+    margin-bottom: 32px;
 }
 
-.tabs {
-    display: flex;
-    gap: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 8px;
-    border-radius: 16px;
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.tab-btn {
-    flex: 1;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 12px;
-    background: transparent;
-    color: #94a3b8;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.tab-btn:hover {
-    color: #e2e8f0;
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.tab-btn.active {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    color: white;
-    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
-}
-
-.tab-content {
-    display: none;
-}
-
-.tab-content.active {
-    display: block;
+.calendar-section {
+    margin-top: 32px;
 }
 
 /* Календарь */
+
 .calendar-container {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 20px;
@@ -206,6 +165,9 @@ body {
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .calendar-header {
@@ -238,6 +200,10 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
     min-height: 200px;
+    max-height: 400px; /* Ограничиваем высоту */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .week-day:hover {
@@ -298,6 +264,36 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    flex: 1;
+    overflow-y: auto;
+    max-height: 300px; /* Максимальная высота для 5 задач */
+    padding-right: 8px;
+}
+
+/* Стили для скроллбара в календаре */
+.week-tasks::-webkit-scrollbar {
+    width: 6px;
+}
+
+.week-tasks::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.week-tasks::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.week-tasks::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Стили для кнопки "Ещё" */
+.more-tasks-btn:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #e2e8f0 !important;
+    transform: translateY(-1px);
 }
 
 .week-task {

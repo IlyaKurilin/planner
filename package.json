@@ -1,0 +1,53 @@
+{
+  "name": "planner",
+  "version": "1.0.0",
+  "description": "Современное веб-приложение для управления задачами с красивым интерфейсом и функционалом трекинга времени.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win",
+    "pack:dir": "electron-builder --dir -w"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IlyaKurilin/planner.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/IlyaKurilin/planner/issues"
+  },
+  "homepage": "https://github.com/IlyaKurilin/planner#readme",
+  "devDependencies": {
+    "cross-env": "^10.0.0",
+    "electron": "^38.1.2",
+    "electron-builder": "^23.6.0"
+  },
+  "build": {
+    "appId": "com.planner.app",
+    "productName": "Planner",
+    "directories": {
+      "buildResources": "assets/icons"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/.cache/**"
+    ],
+    "win": {
+      "icon": "assets/icons/win/icon.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false
+    }
+  }
+}

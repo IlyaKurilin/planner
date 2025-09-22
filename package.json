@@ -6,7 +6,8 @@
   "scripts": {
     "start": "electron .",
     "dist": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win",
-    "pack:dir": "electron-builder --dir -w"
+    "pack:dir": "electron-builder --dir -w",
+    "version:tag": "git tag v%npm_package_version% && git push origin v%npm_package_version%"
   },
   "repository": {
     "type": "git",
